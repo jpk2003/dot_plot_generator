@@ -14,7 +14,7 @@
     padding: 32px 24px;
     color: #1a1a2e;
   }
-  .container { max-width: 960px; margin: 0 auto; }
+  .container { max-width: 1060px; margin: 0 auto; }
   h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
   .subtitle { color: #6b7280; font-size: 14px; margin-top: 6px; }
   .card {
@@ -30,14 +30,14 @@
   }
   .input:disabled { background: #f0f1f4; color: #b0b5c0; }
   .input-name { width: 140px; text-align: left; font-weight: 600; }
-  .input-num { width: 68px; text-align: center; }
+  .input-num { width: 62px; text-align: center; }
   .title-input {
     padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;
     font-weight: 600; color: #1a1a2e; background: #fafbfc; outline: none; flex: 1;
     font-family: 'DM Sans', sans-serif;
   }
   .row {
-    display: flex; align-items: flex-end; gap: 10px; padding: 10px 14px 10px 18px;
+    display: flex; align-items: flex-end; gap: 8px; padding: 10px 10px 10px 18px;
     border-radius: 8px; border: 1px solid #eef0f4; position: relative;
   }
   .row:nth-child(odd) { background: #fff; }
@@ -122,6 +122,81 @@
     padding: 6px 10px; font-size: 13px; color: #1a1a2e; border-bottom: 1px solid #f0f1f4;
   }
   .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+  /* CSV Upload area */
+  .upload-area {
+    border: 2px dashed #d0d0d0; border-radius: 10px; padding: 16px; text-align: center;
+    cursor: pointer; transition: all 0.2s; background: #fafbfc;
+  }
+  .upload-area:hover { border-color: #6366f1; background: #f5f5ff; }
+  .upload-area.loaded { border-color: #22c55e; background: #f0fdf4; }
+  .upload-area svg { width: 24px; height: 24px; margin-bottom: 2px; fill: #aaa; }
+  .upload-area.loaded svg { fill: #22c55e; }
+  .upload-text { font-size: 12px; color: #888; }
+  .upload-area.loaded .upload-text { color: #16a34a; font-weight: 600; }
+  .upload-hint { font-size: 10px; color: #bbb; margin-top: 2px; }
+  input[type="file"] { display: none; }
+
+  /* Upload grid: two side-by-side upload areas */
+  .upload-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
+  }
+  .upload-section-label {
+    font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+
+  /* Axis size controls */
+  .size-control {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .size-control .label { margin-bottom: 0; }
+  .size-slider {
+    width: 80px; accent-color: #2563eb; cursor: pointer;
+  }
+  .size-value {
+    font-size: 11px; color: #6b7280; font-weight: 600; min-width: 28px; text-align: center;
+  }
+
+  /* Variable name select (dropdown in row) */
+  .var-name-select {
+    width: 140px; padding: 6px 4px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    background: #fafbfc; color: #1a1a2e; outline: none; cursor: pointer;
+  }
+  .var-name-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+  /* Prev variable select (dropdown for previous CSV) */
+  .prev-var-select {
+    width: 140px; padding: 6px 4px; border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: 11px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    background: #fafbfc; color: #1a1a2e; outline: none; cursor: pointer;
+  }
+  .prev-var-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+  .prev-var-select:disabled { background: #f0f1f4; color: #b0b5c0; cursor: not-allowed; }
+
+  /* Divider between current and prev in row */
+  .row-divider {
+    width: 1px; background: #e0e3e8; align-self: stretch; margin: 0 2px;
+  }
+
+  /* Toggle switch */
+  .switch {
+    position: relative; display: inline-block; width: 40px; height: 22px; cursor: pointer;
+  }
+  .switch input {
+    position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; margin: 0;
+  }
+  .switch .slider {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: #ccc; border-radius: 22px; transition: 0.2s;
+  }
+  .switch .slider::before {
+    content: ""; position: absolute; height: 16px; width: 16px;
+    left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: #6366f1; }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
 </style>
 </head>
 <body>
@@ -129,10 +204,13 @@
 <div class="container" id="app"></div>
 
 <script>
-const SCALE_MIN = 1, SCALE_MAX = 5, PLOT_LEFT = 120, PLOT_RIGHT = 340;
-const ROW_HEIGHT = 56, DOT_RADIUS = 7, SHADOW_RADIUS = 5;
+const SCALE_MIN = 1, SCALE_MAX = 5, PLOT_LEFT = 120;
+const DEFAULT_PLOT_WIDTH = 150;
+const DEFAULT_ROW_HEIGHT = 56;
+const DOT_RADIUS = 4, SHADOW_RADIUS = 4;
 
 function scaleX(val) {
+  const PLOT_RIGHT = PLOT_LEFT + state.plotWidth;
   return PLOT_LEFT + ((val - SCALE_MIN) / (SCALE_MAX - SCALE_MIN)) * (PLOT_RIGHT - PLOT_LEFT);
 }
 function getCI(mean, margin) {
@@ -147,28 +225,195 @@ function getDotColor(mean, margin, goal) {
   return "#FFFF00";
 }
 
+// ===== CURRENT CSV STATE =====
+let csvData = [];
+let csvHeaders = [];
+let csvFileName = '';
+
+// ===== PREVIOUS CSV STATE =====
+let prevCsvData = [];
+let prevCsvHeaders = [];
+let prevCsvFileName = '';
+
+// ===== MAIN STATE =====
 let state = {
-  title: "Topline + Product",
+  title: "",
   goal: 4.0,
+  plotWidth: DEFAULT_PLOT_WIDTH,
+  rowHeight: DEFAULT_ROW_HEIGHT,
+  prevLegend: "Previous Mean",
+  showLegend: false,
   showPaste: false,
   pasteRaw: "",
   pastePreview: [],
   pasteError: "",
   variables: [
-    { name: "Satisfaction", currentMean: "2.97", margin: "0.22", prevMean: "3.07", prevMargin: "0.22", showPrev: true },
-    { name: "Likelihood to Use", currentMean: "2.73", margin: "0.22", prevMean: "2.97", prevMargin: "0.22", showPrev: true },
-    { name: "Ease of Use", currentMean: "2.95", margin: "0.22", prevMean: "3.17", prevMargin: "0.22", showPrev: true },
-    { name: "Hardware", currentMean: "3.47", margin: "0.22", prevMean: "3.46", prevMargin: "0.22", showPrev: true },
-    { name: "Battery Life", currentMean: "2.33", margin: "0.22", prevMean: "3.24", prevMargin: "0.22", showPrev: true },
+    { name: "", currentMean: "", margin: "", prevName: "", prevMean: "", prevMargin: "", showPrev: false },
+    { name: "", currentMean: "", margin: "", prevName: "", prevMean: "", prevMargin: "", showPrev: false },
+    { name: "", currentMean: "", margin: "", prevName: "", prevMean: "", prevMargin: "", showPrev: false },
+    { name: "", currentMean: "", margin: "", prevName: "", prevMean: "", prevMargin: "", showPrev: false },
+    { name: "", currentMean: "", margin: "", prevName: "", prevMean: "", prevMargin: "", showPrev: false },
   ],
 };
 
+// ===== CSV PARSING =====
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { current += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { result.push(current.trim()); current = ''; }
+      else { current += ch; }
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function colLetter(idx) {
+  let s = '';
+  let n = idx;
+  while (n >= 0) {
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+  if (lines.length < 2) return { headers: [], data: [] };
+  const headers = parseCSVLine(lines[0]);
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = parseCSVLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+    data.push(row);
+  }
+  return { headers, data };
+}
+
+function handleCSVFile(file) {
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    alert('Please upload a CSV file.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const { headers, data } = parseCSV(e.target.result);
+    if (headers.length === 0) { alert('CSV must have a header row and at least one data row.'); return; }
+    csvHeaders = headers;
+    csvData = data;
+    csvFileName = file.name;
+    render();
+  };
+  reader.readAsText(file);
+}
+
+function handlePrevCSVFile(file) {
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    alert('Please upload a CSV file.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const { headers, data } = parseCSV(e.target.result);
+    if (headers.length === 0) { alert('CSV must have a header row and at least one data row.'); return; }
+    prevCsvHeaders = headers;
+    prevCsvData = data;
+    prevCsvFileName = file.name;
+    // Auto-enable prev for all rows and try to match variable names
+    state.variables.forEach(v => {
+      if (v.name && prevCsvHeaders.includes(v.name)) {
+        v.showPrev = true;
+        v.prevName = v.name;
+        const stats = computeStatsFrom(prevCsvData, v.name);
+        if (!isNaN(stats.mean)) {
+          v.prevMean = stats.mean.toFixed(2);
+          v.prevMargin = stats.margin.toFixed(2);
+        }
+      }
+    });
+    render();
+  };
+  reader.readAsText(file);
+}
+
+function computeStats(varName) {
+  return computeStatsFrom(csvData, varName);
+}
+
+function computeStatsFrom(data, varName) {
+  const values = data
+    .map(row => parseFloat(row[varName]))
+    .filter(v => !isNaN(v));
+  const n = values.length;
+  if (n === 0) return { mean: NaN, sd: NaN, margin: NaN, n: 0 };
+  const mean = values.reduce((a, b) => a + b, 0) / n;
+  const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1);
+  const sd = Math.sqrt(variance);
+  const margin = 1.96 * sd / Math.sqrt(n);
+  return { mean, sd, margin, n };
+}
+
+// When a dropdown selects a CSV variable, auto-fill mean and ± for that row
+function selectCsvVar(rowIndex, varName) {
+  if (!varName) return;
+  const stats = computeStats(varName);
+  state.variables[rowIndex].name = varName;
+  if (!isNaN(stats.mean)) {
+    state.variables[rowIndex].currentMean = stats.mean.toFixed(2);
+    state.variables[rowIndex].margin = stats.margin.toFixed(2);
+  }
+  // If prev CSV is loaded and has the same variable, auto-match
+  if (prevCsvFileName && prevCsvHeaders.includes(varName)) {
+    state.variables[rowIndex].prevName = varName;
+    state.variables[rowIndex].showPrev = true;
+    const prevStats = computeStatsFrom(prevCsvData, varName);
+    if (!isNaN(prevStats.mean)) {
+      state.variables[rowIndex].prevMean = prevStats.mean.toFixed(2);
+      state.variables[rowIndex].prevMargin = prevStats.margin.toFixed(2);
+    }
+  }
+  render();
+}
+
+// When a prev dropdown selects a variable from the prev CSV
+function selectPrevCsvVar(rowIndex, varName) {
+  if (!varName) {
+    state.variables[rowIndex].prevName = "";
+    state.variables[rowIndex].prevMean = "";
+    state.variables[rowIndex].prevMargin = "";
+    render();
+    return;
+  }
+  const stats = computeStatsFrom(prevCsvData, varName);
+  state.variables[rowIndex].prevName = varName;
+  state.variables[rowIndex].showPrev = true;
+  if (!isNaN(stats.mean)) {
+    state.variables[rowIndex].prevMean = stats.mean.toFixed(2);
+    state.variables[rowIndex].prevMargin = stats.margin.toFixed(2);
+  }
+  render();
+}
+
+// ===== SVG BUILDER =====
 function buildSVG(variables, title, goal) {
+  const PLOT_RIGHT = PLOT_LEFT + state.plotWidth;
+  const ROW_HEIGHT = state.rowHeight;
   const chartTop = title ? 50 : 20;
   const bodyH = variables.length * ROW_HEIGHT + 4;
   const legendY = chartTop + bodyH + 28;
-  const svgH = legendY + 58;
-  const svgW = 420;
+  const svgH = state.showLegend ? legendY + 78 : legendY + 10;
+  const svgW = PLOT_RIGHT + 80;
   const goalX = scaleX(goal);
   let s = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="font-family:'DM Sans',sans-serif">`;
 
@@ -176,18 +421,20 @@ function buildSVG(variables, title, goal) {
 
   [1,2,3,4,5].forEach(v => {
     const x = scaleX(v);
-    const dash = (v===1||v===5) ? "" : ' stroke-dasharray="3,3"';
-    s += `<line x1="${x}" y1="${chartTop}" x2="${x}" y2="${chartTop+bodyH}" stroke="#d8dbe2" stroke-width="1"${dash}/>`;
+    const dash = (v===1) ? "" : ' stroke-dasharray="3,3"';
+    const sw = (v===1) ? "1" : "0.5";
+    const sc = (v===1) ? "#c5c9d4" : "#e0e3e8";
+    s += `<line x1="${x}" y1="${chartTop}" x2="${x}" y2="${chartTop+bodyH}" stroke="${sc}" stroke-width="${sw}"${dash}/>`;
     s += `<text x="${x}" y="${chartTop+bodyH+18}" text-anchor="middle" font-size="11" fill="#6b7280">${v}</text>`;
   });
 
-  // Goal line
-  s += `<rect x="${goalX-0.5}" y="${chartTop-2}" width="2" height="${bodyH+4}" fill="#2563eb" opacity="0.15" rx="1"/>`;
-  s += `<line x1="${goalX}" y1="${chartTop-2}" x2="${goalX}" y2="${chartTop+bodyH+2}" stroke="#2563eb" stroke-width="2" stroke-dasharray="6,3"/>`;
-  s += `<g transform="translate(${goalX},${chartTop-8})"><rect x="-18" y="-11" width="36" height="15" rx="3" fill="#2563eb"/><text x="0" y="1" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">GOAL</text></g>`;
+  // Goal line (lighter blue, thinner)
+  s += `<rect x="${goalX-0.5}" y="${chartTop-2}" width="1.5" height="${bodyH+4}" fill="#93b5f0" opacity="0.12" rx="1"/>`;
+  s += `<line x1="${goalX}" y1="${chartTop-2}" x2="${goalX}" y2="${chartTop+bodyH+2}" stroke="#93b5f0" stroke-width="1.2" stroke-dasharray="5,3"/>`;
+  s += `<g transform="translate(${goalX},${chartTop-8})"><rect x="-18" y="-11" width="36" height="15" rx="3" fill="#a0bfee"/><text x="0" y="1" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">GOAL</text></g>`;
 
-  // Box
-  s += `<rect x="${PLOT_LEFT}" y="${chartTop}" width="${PLOT_RIGHT-PLOT_LEFT}" height="${bodyH}" fill="none" stroke="#c5c9d4" stroke-width="1" rx="2"/>`;
+  // X-axis (bottom) only — no top or right border
+  s += `<line x1="${PLOT_LEFT}" y1="${chartTop+bodyH}" x2="${PLOT_RIGHT}" y2="${chartTop+bodyH}" stroke="#c5c9d4" stroke-width="1"/>`;
 
   variables.forEach((v, i) => {
     const y = chartTop + i * ROW_HEIGHT + ROW_HEIGHT / 2 + 2;
@@ -199,7 +446,6 @@ function buildSVG(variables, title, goal) {
     const hasCurCI = !isNaN(cL) && !isNaN(cH);
     const hasPrevCI = !isNaN(pL) && !isNaN(pH) && v.showPrev;
     const dotColor = getDotColor(v.currentMean, v.margin, goal);
-    const textColor = dotColor === "#FFFF00" ? "#b8a000" : dotColor;
     const ciStroke = dotColor === "#FFFF00" ? "#e6e600" : dotColor;
 
     if (i > 0) s += `<line x1="${PLOT_LEFT}" y1="${chartTop+i*ROW_HEIGHT}" x2="${PLOT_RIGHT}" y2="${chartTop+i*ROW_HEIGHT}" stroke="#e8eaef" stroke-width="0.5"/>`;
@@ -217,11 +463,14 @@ function buildSVG(variables, title, goal) {
 
     // Previous CI
     if (hasPrevCI) {
-      s += `<line x1="${scaleX(pL)}" y1="${y+10}" x2="${scaleX(pH)}" y2="${y+10}" stroke="#c5c9d4" stroke-width="2" stroke-linecap="round"/>`;
-      s += `<line x1="${scaleX(pL)}" y1="${y+6}" x2="${scaleX(pL)}" y2="${y+14}" stroke="#c5c9d4" stroke-width="1.5"/>`;
-      s += `<line x1="${scaleX(pH)}" y1="${y+6}" x2="${scaleX(pH)}" y2="${y+14}" stroke="#c5c9d4" stroke-width="1.5"/>`;
+      s += `<line x1="${scaleX(pL)}" y1="${y+10}" x2="${scaleX(pH)}" y2="${y+10}" stroke="#d4d8e0" stroke-width="2" stroke-linecap="round"/>`;
+      s += `<line x1="${scaleX(pL)}" y1="${y+6}" x2="${scaleX(pL)}" y2="${y+14}" stroke="#d4d8e0" stroke-width="1.5"/>`;
+      s += `<line x1="${scaleX(pH)}" y1="${y+6}" x2="${scaleX(pH)}" y2="${y+14}" stroke="#d4d8e0" stroke-width="1.5"/>`;
     }
-    if (hasPrev) s += `<circle cx="${scaleX(prev)}" cy="${y+10}" r="${SHADOW_RADIUS}" fill="none" stroke="#9ca3af" stroke-width="1.5"/>`;
+    if (hasPrev) {
+      s += `<circle cx="${scaleX(prev)}" cy="${y+10}" r="${SHADOW_RADIUS}" fill="none" stroke="#c0c5cf" stroke-width="1.5"/>`;
+      s += `<text x="${scaleX(prev)}" y="${y+24}" text-anchor="middle" font-size="10" font-weight="600" fill="#c0c5cf">${prev.toFixed(2)}</text>`;
+    }
 
     // Current CI
     if (hasCurCI) {
@@ -234,18 +483,36 @@ function buildSVG(variables, title, goal) {
     if (hasCur) {
       const stroke = dotColor === "#FFFF00" ? ' stroke="#ccb800" stroke-width="1"' : '';
       s += `<circle cx="${scaleX(cur)}" cy="${y-4}" r="${DOT_RADIUS}" fill="${dotColor}"${stroke}/>`;
-      s += `<text x="${scaleX(cur)}" y="${y-16}" text-anchor="middle" font-size="12" font-weight="700" fill="${textColor}">${cur.toFixed(2)}</text>`;
+      s += `<text x="${scaleX(cur)}" y="${y-16}" text-anchor="middle" font-size="12" font-weight="700" fill="#1a1a2e">${cur.toFixed(2)}</text>`;
+    }
+
+    // Stat sig indicator: asterisk to the right of the current dot
+    if (hasCur && hasPrev && hasCurCI && hasPrevCI) {
+      // Two-sample z-test using the margin of error (which is 1.96 * SE)
+      const curSE = parseFloat(v.margin) / 1.96;
+      const prevSE = parseFloat(v.prevMargin) / 1.96;
+      const seDiff = Math.sqrt(curSE * curSE + prevSE * prevSE);
+      const zStat = (cur - prev) / seDiff;
+      const isSig = Math.abs(zStat) >= 1.96; // p < 0.05
+      if (isSig) {
+        const sigColor = (cur > prev) ? "#16a34a" : "#dc2626";
+        const asteriskX = Math.max(scaleX(cH), scaleX(cur) + DOT_RADIUS) + 10;
+        s += `<text x="${asteriskX}" y="${y}" text-anchor="middle" font-size="18" font-weight="700" fill="${sigColor}">*</text>`;
+      }
     }
   });
 
-  // Legend — row 1
-  s += `<g transform="translate(${PLOT_LEFT},${legendY})">`;
-  s += `<circle cx="0" cy="0" r="4" fill="none" stroke="#9ca3af" stroke-width="1.5"/><text x="10" y="4" font-size="9.5" fill="#6b7280">Previous Mean</text>`;
-  s += `<circle cx="110" cy="0" r="5" fill="#dc2626"/><text x="120" y="4" font-size="9.5" fill="#6b7280">Below Goal</text>`;
-  // Legend — row 2
-  s += `<circle cx="0" cy="20" r="5" fill="#FFFF00" stroke="#ccb800" stroke-width="1"/><text x="10" y="24" font-size="9.5" fill="#6b7280">Within Margin</text>`;
-  s += `<circle cx="110" cy="20" r="5" fill="#16a34a"/><text x="120" y="24" font-size="9.5" fill="#6b7280">Above Goal</text>`;
-  s += `</g>`;
+  // Legend (conditional)
+  if (state.showLegend) {
+    s += `<g transform="translate(${PLOT_LEFT},${legendY})">`;
+    s += `<circle cx="0" cy="0" r="4" fill="none" stroke="#c0c5cf" stroke-width="1.5"/><text x="10" y="4" font-size="9.5" fill="#6b7280">${esc(state.prevLegend)}</text>`;
+    s += `<circle cx="110" cy="0" r="5" fill="#dc2626"/><text x="120" y="4" font-size="9.5" fill="#6b7280">Below Goal</text>`;
+    s += `<circle cx="0" cy="20" r="5" fill="#FFFF00" stroke="#ccb800" stroke-width="1"/><text x="10" y="24" font-size="9.5" fill="#6b7280">Within Margin</text>`;
+    s += `<circle cx="110" cy="20" r="5" fill="#16a34a"/><text x="120" y="24" font-size="9.5" fill="#6b7280">Above Goal</text>`;
+    s += `<text x="0" y="44" font-size="14" font-weight="700" fill="#16a34a">*</text><text x="10" y="44" font-size="9.5" fill="#6b7280">Sig. increase (p&lt;.05)</text>`;
+    s += `<text x="110" y="44" font-size="14" font-weight="700" fill="#dc2626">*</text><text x="120" y="44" font-size="9.5" fill="#6b7280">Sig. decrease (p&lt;.05)</text>`;
+    s += `</g>`;
+  }
 
   s += `</svg>`;
   return s;
@@ -271,22 +538,64 @@ function parsePaste(text) {
     const prevMargin = row.length >= 5 ? row[4].replace(/[^\d.\-]/g, "") : "";
     if (!name || isNaN(parseFloat(currentMean))) return { preview: [], error: `Could not parse: "${row.join(", ")}"` };
     const showPrev = prevMean !== "" && !isNaN(parseFloat(prevMean));
-    parsed.push({ name, currentMean, margin, prevMean, prevMargin, showPrev });
+    parsed.push({ name, currentMean, margin, prevName: "", prevMean, prevMargin, showPrev });
   }
   if (parsed.length < 2) return { preview: [], error: "Need at least 2 variables." };
   if (parsed.length > 8) return { preview: [], error: "Maximum 8 variables. Found " + parsed.length + "." };
   return { preview: parsed, error: "" };
 }
 
+// ===== RENDER =====
 function render() {
   const app = document.getElementById("app");
   const vars = state.variables;
   const goal = state.goal;
+  const hasCSV = csvFileName !== '';
+  const hasPrevCSV = prevCsvFileName !== '';
 
   let html = `<div style="margin-bottom:28px"><h1>Dot Plot Generator</h1><p class="subtitle">Current vs. previous means with confidence intervals · 1–5 scale</p></div>`;
 
   // Input card
   html += `<div class="card">`;
+
+  // --- CSV Upload Section: Two side-by-side ---
+  html += `<div class="upload-grid">`;
+
+  // Current CSV
+  html += `<div>`;
+  html += `<div class="upload-section-label">📊 Current Wave CSV</div>`;
+  html += `<div class="upload-area ${csvFileName ? 'loaded' : ''}" id="uploadArea" onclick="document.getElementById('csvFile').click()">`;
+  html += `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>`;
+  if (csvFileName) {
+    html += `<div class="upload-text">${esc(csvFileName)}</div>`;
+    html += `<div class="upload-hint">${csvHeaders.length} columns · ${csvData.length} rows</div>`;
+  } else {
+    html += `<div class="upload-text">Click to upload current CSV</div>`;
+    html += `<div class="upload-hint">or drag & drop</div>`;
+  }
+  html += `</div>`;
+  html += `<input type="file" id="csvFile" accept=".csv">`;
+  html += `</div>`;
+
+  // Previous CSV
+  html += `<div>`;
+  html += `<div class="upload-section-label">📋 Previous Wave CSV</div>`;
+  html += `<div class="upload-area ${prevCsvFileName ? 'loaded' : ''}" id="prevUploadArea" onclick="document.getElementById('prevCsvFile').click()">`;
+  html += `<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>`;
+  if (prevCsvFileName) {
+    html += `<div class="upload-text">${esc(prevCsvFileName)}</div>`;
+    html += `<div class="upload-hint">${prevCsvHeaders.length} columns · ${prevCsvData.length} rows</div>`;
+  } else {
+    html += `<div class="upload-text">Click to upload previous CSV</div>`;
+    html += `<div class="upload-hint">or drag & drop · Optional</div>`;
+  }
+  html += `</div>`;
+  html += `<input type="file" id="prevCsvFile" accept=".csv">`;
+  html += `</div>`;
+
+  html += `</div>`; // end upload-grid
+
+  // --- Title / Goal / Paste row ---
   html += `<div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:18px;flex-wrap:wrap">`;
   html += `<div class="col" style="flex:1;min-width:200px"><div class="label">Chart Title</div><input class="title-input" value="${esc(state.title)}" oninput="updateTitle(this.value)"></div>`;
   // Goal toggle
@@ -296,18 +605,81 @@ function render() {
   html += `</div></div>`;
   html += `<button class="btn-paste" onclick="openPaste()">📋 Paste from Spreadsheet</button></div>`;
 
+  // --- Previous legend name + Legend toggle ---
+  html += `<div style="display:flex;align-items:flex-end;gap:24px;margin-bottom:8px;flex-wrap:wrap">`;
+  html += `<div class="col" style="min-width:180px"><div class="label">Previous Mean Legend</div><input class="input" style="width:180px;font-size:13px" value="${esc(state.prevLegend)}" oninput="updatePrevLegend(this.value)"></div>`;
+  html += `<div class="col"><div class="label">Show Legend</div><label class="switch"><input type="checkbox" ${state.showLegend ? 'checked' : ''} onchange="toggleLegend(this.checked)"><span class="slider"></span></label></div>`;
+  html += `</div>`;
+
+  // --- Axis size controls ---
+  html += `<div style="display:flex;align-items:flex-end;gap:24px;margin-bottom:18px;flex-wrap:wrap">`;
+  html += `<div class="size-control"><div class="label">X-Axis Width</div>`;
+  html += `<input type="range" class="size-slider" min="100" max="350" value="${state.plotWidth}" oninput="updatePlotWidth(parseInt(this.value))">`;
+  html += `<span class="size-value">${state.plotWidth}px</span></div>`;
+  html += `<div class="size-control"><div class="label">Row Height</div>`;
+  html += `<input type="range" class="size-slider" min="30" max="80" value="${state.rowHeight}" oninput="updateRowHeight(parseInt(this.value))">`;
+  html += `<span class="size-value">${state.rowHeight}px</span></div>`;
+  html += `</div>`;
+
+  // --- Variable rows ---
   html += `<div class="rows-container">`;
   vars.forEach((v, i) => {
     const dotColor = getDotColor(v.currentMean, v.margin, goal);
     const barColor = dotColor === "#FFFF00" ? "#e6e600" : dotColor;
     const prevDisabled = !v.showPrev;
+
     html += `<div class="row"><div class="row-indicator" style="background:${barColor}"></div>`;
-    html += `<div class="col"><div class="label">Variable</div><input class="input input-name" value="${esc(v.name)}" oninput="updateVar(${i},'name',this.value)"></div>`;
+
+    // Variable name: dropdown if CSV loaded, text input otherwise
+    html += `<div class="col"><div class="label">Variable</div>`;
+    if (hasCSV) {
+      html += `<select class="var-name-select" onchange="selectCsvVar(${i}, this.value)">`;
+      html += `<option value="">— Select —</option>`;
+      csvHeaders.forEach((h, idx) => {
+        const letter = colLetter(idx);
+        const selected = v.name === h ? ' selected' : '';
+        html += `<option value="${esc(h)}"${selected}>${letter}: ${esc(h)}</option>`;
+      });
+      if (v.name && !csvHeaders.includes(v.name)) {
+        html += `<option value="${esc(v.name)}" selected>${esc(v.name)}</option>`;
+      }
+      html += `</select>`;
+    } else {
+      html += `<input class="input input-name" value="${esc(v.name)}" oninput="updateVar(${i},'name',this.value)">`;
+    }
+    html += `</div>`;
+
     html += `<div class="col centered"><div class="label">Mean</div><input class="input input-num" value="${esc(v.currentMean)}" oninput="updateVar(${i},'currentMean',this.value)"></div>`;
     html += `<div class="col centered"><div class="label">±</div><input class="input input-num" value="${esc(v.margin)}" oninput="updateVar(${i},'margin',this.value)"></div>`;
-    // Previous with toggle
-    html += `<div class="col centered"><div class="prev-toggle"><input type="checkbox" ${v.showPrev?'checked':''} onchange="togglePrev(${i})"><span class="prev-toggle-label">Prev</span></div><input class="input input-num" value="${esc(v.prevMean)}" oninput="updateVar(${i},'prevMean',this.value)" ${prevDisabled?'disabled':''}></div>`;
+
+    // Divider
+    html += `<div class="row-divider"></div>`;
+
+    // Previous: toggle + plain mean box + plain ± box + variable dropdown (if prev CSV loaded)
+    html += `<div class="col centered"><div class="prev-toggle"><input type="checkbox" ${v.showPrev?'checked':''} onchange="togglePrev(${i})"><span class="prev-toggle-label">Prev</span></div>`;
+    html += `<input class="input input-num" value="${esc(v.prevMean)}" oninput="updateVar(${i},'prevMean',this.value)" ${prevDisabled?'disabled':''}>`;
+    html += `</div>`;
+
     html += `<div class="col centered"><div class="label" style="visibility:${v.showPrev?'visible':'hidden'}">Prev ±</div><input class="input input-num" value="${esc(v.prevMargin)}" oninput="updateVar(${i},'prevMargin',this.value)" ${prevDisabled?'disabled':''}></div>`;
+
+    // Previous Variable dropdown (populated from prev CSV)
+    html += `<div class="col"><div class="label" style="visibility:${v.showPrev?'visible':'hidden'}">Prev Variable</div>`;
+    if (hasPrevCSV) {
+      html += `<select class="prev-var-select" onchange="selectPrevCsvVar(${i}, this.value)" ${prevDisabled?'disabled':''}>`;
+      html += `<option value="">— Select —</option>`;
+      prevCsvHeaders.forEach((h, idx) => {
+        const letter = colLetter(idx);
+        const selected = (v.prevName === h) ? ' selected' : '';
+        html += `<option value="${esc(h)}"${selected}>${letter}: ${esc(h)}</option>`;
+      });
+      if (v.prevName && !prevCsvHeaders.includes(v.prevName)) {
+        html += `<option value="${esc(v.prevName)}" selected>${esc(v.prevName)}</option>`;
+      }
+      html += `</select>`;
+    } else {
+      html += `<input class="input input-name" value="${esc(v.prevName)}" oninput="updateVar(${i},'prevName',this.value)" ${prevDisabled?'disabled':''} placeholder="">`;
+    }
+    html += `</div>`;
     if (vars.length > 2) html += `<button class="btn-remove" onclick="removeVar(${i})">×</button>`;
     html += `</div>`;
   });
@@ -351,6 +723,36 @@ function render() {
 
   app.innerHTML = html;
 
+  // Re-attach current CSV file input handler
+  document.getElementById('csvFile').addEventListener('change', function() {
+    if (this.files.length) handleCSVFile(this.files[0]);
+  });
+
+  // Re-attach previous CSV file input handler
+  document.getElementById('prevCsvFile').addEventListener('change', function() {
+    if (this.files.length) handlePrevCSVFile(this.files[0]);
+  });
+
+  // Re-attach drag & drop for current CSV
+  const uploadArea = document.getElementById('uploadArea');
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#6366f1'; });
+  uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '';
+    if (e.dataTransfer.files.length) handleCSVFile(e.dataTransfer.files[0]);
+  });
+
+  // Re-attach drag & drop for previous CSV
+  const prevUploadArea = document.getElementById('prevUploadArea');
+  prevUploadArea.addEventListener('dragover', e => { e.preventDefault(); prevUploadArea.style.borderColor = '#6366f1'; });
+  prevUploadArea.addEventListener('dragleave', () => { prevUploadArea.style.borderColor = ''; });
+  prevUploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    prevUploadArea.style.borderColor = '';
+    if (e.dataTransfer.files.length) handlePrevCSVFile(e.dataTransfer.files[0]);
+  });
+
   // Re-attach paste handler
   const ta = document.getElementById("pasteArea");
   if (ta) {
@@ -363,14 +765,34 @@ function render() {
   }
 }
 
-function updateTitle(val) { state.title = val; render(); }
+// Update SVG preview only (no DOM rebuild, preserves focus)
+function updatePreview() {
+  const wrap = document.getElementById('svgWrap');
+  if (wrap) wrap.innerHTML = buildSVG(state.variables, state.title, state.goal);
+  // Also update row indicator colors
+  document.querySelectorAll('.row').forEach((row, i) => {
+    if (i < state.variables.length) {
+      const v = state.variables[i];
+      const dotColor = getDotColor(v.currentMean, v.margin, state.goal);
+      const barColor = dotColor === '#FFFF00' ? '#e6e600' : dotColor;
+      const indicator = row.querySelector('.row-indicator');
+      if (indicator) indicator.style.background = barColor;
+    }
+  });
+}
+
+function updateTitle(val) { state.title = val; updatePreview(); }
 function setGoal(val) { state.goal = val; render(); }
-function updateVar(i, field, val) { state.variables[i][field] = val; render(); }
+function updatePlotWidth(val) { state.plotWidth = val; render(); }
+function updateRowHeight(val) { state.rowHeight = val; render(); }
+function updatePrevLegend(val) { state.prevLegend = val; updatePreview(); }
+function toggleLegend(val) { state.showLegend = val; updatePreview(); }
+function updateVar(i, field, val) { state.variables[i][field] = val; updatePreview(); }
 function togglePrev(i) { state.variables[i].showPrev = !state.variables[i].showPrev; render(); }
 function removeVar(i) { if (state.variables.length > 2) { state.variables.splice(i, 1); render(); } }
 function addVar() {
   if (state.variables.length < 8) {
-    state.variables.push({ name: "New Variable", currentMean: "3.00", margin: "0.20", prevMean: "3.00", prevMargin: "0.20", showPrev: true });
+    state.variables.push({ name: "", currentMean: "", margin: "", prevName: "", prevMean: "", prevMargin: "", showPrev: false });
     render();
   }
 }
